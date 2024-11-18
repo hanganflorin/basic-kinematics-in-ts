@@ -1,0 +1,21 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+
+# Temporary files
+*.tsbuildinfo
+
+# VS Code settings
+.vscode/
+
+# Prettier cache
+.prettier/
+
+# MacOS Finder files
+.DS_Store

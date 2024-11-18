@@ -1,0 +1,36 @@
+{
+    "name": "basic-kinematics-in-ts",
+    "version": "1.0.0",
+    "description": "A TypeScript project that draws a canvas with grid, axes, and zooming capabilities. Them something with basic kinematics",
+    "main": "index.ts",
+    "scripts": {
+        "build": "tsc && npm run postbuild",
+        "start": "open dist/index.html",
+        "build_and_start": "npm run build && npm run start",
+        "postbuild": "copyfiles index.html dist",
+        "format": "prettier --write .",
+        "lint": "eslint . --ext .ts,.js",
+        "deploy": "npm run build && gh-pages -d dist",
+        "serve": "http-server dist -p 8000"
+    },
+    "keywords": [
+        "canvas",
+        "typescript",
+        "zoom",
+        "drag",
+        "prettier"
+    ],
+    "author": "Your Name",
+    "license": "MIT",
+    "devDependencies": {
+        "copyfiles": "^2.4.1",
+        "eslint": "^8.40.0",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-import": "^2.28.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "gh-pages": "^6.2.0",
+        "http-server": "^14.1.1",
+        "prettier": "^2.8.4",
+        "typescript": "^5.0.0"
+    }
+}
