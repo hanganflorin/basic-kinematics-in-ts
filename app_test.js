@@ -1,14 +1,16 @@
-"use strict";
+'use strict';
 // Get the canvas and its context
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 // Canvas size
 const width = canvas.width;
 const height = canvas.height;
+console.log('# Canvas size', { width, height });
 // Initial axis system settings
 let originX = width / 2;
 let originY = height / 2;
 let scale = 40; // 1 unit = 40 pixels initially
+console.log('# Initial sizes', { originX, originY, scale });
 let isDragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
@@ -41,21 +43,32 @@ function drawAxes() {
     ctx.lineWidth = 2;
     ctx.stroke();
     // Draw numbers on the axes
-    ctx.fillStyle = 'black';
+    const drawNumberFn = (value, x, y) => {
+        ctx.fillText(value.toFixed(scale < 100 ? 0 : 1).toString(), x, y);
+    };
+    ctx.fillStyle = '#9c9c9c';
     ctx.font = '14px Arial';
-    // Draw X axis numbers
-    for (let i = -width / 2; i <= width / 2; i += scale) {
-        if (i !== 0) {
-            const label = (i / scale).toFixed(1); // Limit to 1 decimal places
-            ctx.fillText(label, originX + i, originY + 15);
+    // draw numbers on x axis
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const firstNumberX = Math.floor(-originX / scale) + 1;
+    const lastNumberX = Math.ceil((width - originX) / scale) - 1;
+    for (let i = firstNumberX; i <= lastNumberX; i++) {
+        if (i === 0) {
+            continue;
         }
+        drawNumberFn(i, i * scale + originX, originY + scale * 0.3);
     }
-    // Draw Y axis numbers
-    for (let i = -height / 2; i <= height / 2; i += scale) {
-        if (i !== 0) {
-            const label = (i / scale).toFixed(1); // Limit to 1 decimal places
-            ctx.fillText(label, originX + 5, originY + i);
+    // draw numbers on y axis
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    const firstNumberY = Math.floor(-originY / scale) + 1;
+    const lastNumberY = Math.ceil((height - originY) / scale) - 1;
+    for (let i = firstNumberY; i <= lastNumberY; i++) {
+        if (i === 0) {
+            continue;
         }
+        drawNumberFn(i, originX - scale * 0.3, i * scale + originY);
     }
 }
 // Mouse events for dragging
@@ -63,16 +76,20 @@ canvas.addEventListener('mousedown', (e) => {
     const mouseX = e.offsetX;
     const mouseY = e.offsetY;
     // Check if the mouse is on the axes to start dragging
-    if (Math.abs(mouseX - originX) < 20 && Math.abs(mouseY - originY) < 20) {
-        isDragging = true;
-        dragStartX = mouseX - originX;
-        dragStartY = mouseY - originY;
-    }
+    // if (
+    //     Math.abs(mouseX - originX) < scale &&
+    //     Math.abs(mouseY - originY) < scale
+    // ) {
+    isDragging = true;
+    dragStartX = mouseX - originX;
+    dragStartY = mouseY - originY;
+    // }
 });
 canvas.addEventListener('mousemove', (e) => {
     if (isDragging) {
         const mouseX = e.offsetX;
         const mouseY = e.offsetY;
+        console.log('!!! mousemove & isDragging', { mouseX, mouseY });
         originX = mouseX - dragStartX;
         originY = mouseY - dragStartY;
         // Redraw the canvas
@@ -84,15 +101,15 @@ canvas.addEventListener('mouseup', () => {
 });
 // Zoom functionality
 canvas.addEventListener('wheel', (e) => {
-    const _scale = 1.005;
+    const scaleMultiplier = 1.01;
     if (e.deltaY < 0) {
         // Zoom in (less sensitive)
-        scale *= _scale;
-    }
-    else {
+        scale *= scaleMultiplier;
+    } else {
         // Zoom out (less sensitive)
-        scale /= _scale;
+        scale /= scaleMultiplier;
     }
+    console.log('!!! ON wheel', { scale });
     // Redraw with the new scale
     redraw();
     e.preventDefault(); // Prevent page scroll
