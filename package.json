@@ -3,15 +3,16 @@
     "version": "1.0.0",
     "description": "A TypeScript project that draws a canvas with grid, axes, and zooming capabilities. Them something with basic kinematics",
     "main": "index.ts",
+    "homepage": "https://hanganflorin.github.io/basic-kinematics-in-ts",
     "scripts": {
-        "build": "tsc && npm run postbuild",
+        "build": "tsc && copyfiles index.html dist",
         "start": "open dist/index.html",
         "build_and_start": "npm run build && npm run start",
-        "postbuild": "copyfiles index.html dist",
+        "serve": "http-server dist -p 8000",
         "format": "prettier --write .",
         "lint": "eslint . --ext .ts,.js",
-        "deploy": "npm run build && gh-pages -d dist",
-        "serve": "http-server dist -p 8000"
+        "predeploy": "npm run build",
+        "deploy": "gh-pages -d dist"
     },
     "keywords": [
         "canvas",
