@@ -2,15 +2,24 @@
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
 
+// get button
+const toggleTimerBtn = document.getElementById('toggleTimer');
+
 // Canvas size
 const width = canvas.width;
 const height = canvas.height;
 console.log('# Canvas size', { width, height });
 
 // Initial axis system settings
-let originX = width / 2;
-let originY = height / 2;
-let scale = 40; // 1 unit = 40 pixels initially
+// let originX = width / 2;
+// let originY = height / 2;
+
+let originX = 50;
+let originY = height - 50;
+
+// let scale = 40; // 1 unit = 40 pixels initially
+// let scale = 25;
+let scale = 16;
 
 console.log('# Initial sizes', { originX, originY, scale });
 
@@ -83,7 +92,7 @@ function drawAxes() {
         if (i === 0) {
             continue;
         }
-        drawNumberFn(i, originX - scale * 0.3, i * scale + originY);
+        drawNumberFn(-i, originX - scale * 0.3, i * scale + originY);
     }
 }
 
@@ -140,11 +149,135 @@ canvas.addEventListener('wheel', (e) => {
     e.preventDefault(); // Prevent page scroll
 });
 
+const pointToCanvasPosition = (x: number, y: number) => {
+    return {
+        x: x * scale + originX,
+        y: -y * scale + originY,
+    };
+};
+
+const drawCircle = (x: number, y: number, radius: number) => {
+    const pointPosition = pointToCanvasPosition(x, y);
+    ctx.beginPath();
+    ctx.arc(
+        pointPosition.x,
+        pointPosition.y,
+        radius * scale * 0.1,
+        0,
+        2 * Math.PI
+    );
+    ctx.globalAlpha = 0.99;
+    ctx.fillStyle = 'green';
+    ctx.fill();
+    ctx.globalAlpha = 1;
+};
+
+// // Animate gravity
+// let xInitial = 2;
+// let yInitial = 2;
+
+const degToRad = Math.PI / 180;
+
+const initialPosition = {
+    x: 2.5,
+    y: 2.5,
+};
+
+const initialAngle = 15; // TODOO this is reversed
+const intialPower = 15;
+const initialVelocity = {
+    x: Math.cos(initialAngle * degToRad) * intialPower,
+    y: Math.sin(initialAngle * degToRad) * intialPower,
+};
+
+let sperePosX = initialPosition.x;
+let sperePosY = initialPosition.y;
+const spereRadius = 5;
+
+const KinematicEquation = (
+    acceleration: number,
+    initialVelocity: number,
+    initialPosition: number,
+    deltaTime: number
+) => {
+    return (
+        0.5 * acceleration * deltaTime * deltaTime +
+        initialVelocity * deltaTime +
+        initialPosition
+    );
+};
+
+function drawObjects() {
+    drawCircle(sperePosX, sperePosY, spereRadius);
+}
+
+let time = 0;
+let startTime = 0;
+let elapsedTime = 0;
+let prevElapsedTime = 0;
+let isRunning = false;
+
+function updateTimer() {
+    if (isRunning) {
+        const currentTime = performance.now();
+        elapsedTime = (currentTime - startTime) / 1000;
+        const deltaTime = elapsedTime - prevElapsedTime;
+        prevElapsedTime = elapsedTime;
+        // console.log(
+        //     `Elapsed time: ${elapsedTime.toFixed(
+        //         2
+        //     )} seconds; Delta: ${deltaTime}`
+        // ); // Log elapsed time
+
+        // START HERE:
+
+        const itHitTheGround = sperePosY - spereRadius * 0.1 <= 0;
+        console.log('!!! itHitTheGround', itHitTheGround);
+
+        if (!itHitTheGround) {
+            sperePosY = KinematicEquation(
+                -9.8,
+                initialVelocity.x,
+                initialPosition.x,
+                elapsedTime
+            );
+        }
+
+        sperePosX = KinematicEquation(
+            0,
+            initialVelocity.y,
+            initialPosition.y,
+            elapsedTime
+        );
+
+        redraw();
+
+        requestAnimationFrame(updateTimer);
+    }
+}
+if (isRunning) {
+    updateTimer();
+}
+
+toggleTimerBtn?.addEventListener('click', () => {
+    if (isRunning) {
+        isRunning = false;
+    } else {
+        isRunning = true;
+        startTime = performance.now() - elapsedTime * 1000; // Adjust startTime to maintain continuity
+        requestAnimationFrame(updateTimer);
+    }
+
+    console.log('!!! isRunning', isRunning);
+});
+
 // Function to redraw everything
 function redraw() {
     ctx.clearRect(0, 0, width, height);
     drawGrid();
     drawAxes();
+
+    drawObjects();
 }
 
 // Initial drawing
