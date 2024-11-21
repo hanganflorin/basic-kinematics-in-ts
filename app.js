@@ -2,13 +2,21 @@
 // Get the canvas and its context
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+// get button
+const toggleTimerBtn = document.getElementById('toggleTimer');
 // Canvas size
 const width = canvas.width;
 const height = canvas.height;
+console.log('# Canvas size', { width, height });
 // Initial axis system settings
-let originX = width / 2;
-let originY = height / 2;
-let scale = 40; // 1 unit = 40 pixels initially
+// let originX = width / 2;
+// let originY = height / 2;
+let originX = 50;
+let originY = height - 50;
+// let scale = 40; // 1 unit = 40 pixels initially
+// let scale = 25;
+let scale = 16;
+console.log('# Initial sizes', { originX, originY, scale });
 let isDragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
@@ -41,21 +49,32 @@ function drawAxes() {
     ctx.lineWidth = 2;
     ctx.stroke();
     // Draw numbers on the axes
-    ctx.fillStyle = 'black';
+    const drawNumberFn = (value, x, y) => {
+        ctx.fillText(value.toFixed(scale < 100 ? 0 : 1).toString(), x, y);
+    };
+    ctx.fillStyle = '#9c9c9c';
     ctx.font = '14px Arial';
-    // Draw X axis numbers
-    for (let i = -width / 2; i <= width / 2; i += scale) {
-        if (i !== 0) {
-            const label = (i / scale).toFixed(1); // Limit to 1 decimal places
-            ctx.fillText(label, originX + i, originY + 15);
+    // draw numbers on x axis
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const firstNumberX = Math.floor(-originX / scale) + 1;
+    const lastNumberX = Math.ceil((width - originX) / scale) - 1;
+    for (let i = firstNumberX; i <= lastNumberX; i++) {
+        if (i === 0) {
+            continue;
         }
+        drawNumberFn(i, i * scale + originX, originY + scale * 0.3);
     }
-    // Draw Y axis numbers
-    for (let i = -height / 2; i <= height / 2; i += scale) {
-        if (i !== 0) {
-            const label = (i / scale).toFixed(1); // Limit to 1 decimal places
-            ctx.fillText(label, originX + 5, originY + i);
+    // draw numbers on y axis
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    const firstNumberY = Math.floor(-originY / scale) + 1;
+    const lastNumberY = Math.ceil((height - originY) / scale) - 1;
+    for (let i = firstNumberY; i <= lastNumberY; i++) {
+        if (i === 0) {
+            continue;
         }
+        drawNumberFn(-i, originX - scale * 0.3, i * scale + originY);
     }
 }
 // Mouse events for dragging
@@ -63,16 +82,20 @@ canvas.addEventListener('mousedown', (e) => {
     const mouseX = e.offsetX;
     const mouseY = e.offsetY;
     // Check if the mouse is on the axes to start dragging
-    if (Math.abs(mouseX - originX) < 20 && Math.abs(mouseY - originY) < 20) {
-        isDragging = true;
-        dragStartX = mouseX - originX;
-        dragStartY = mouseY - originY;
-    }
+    // if (
+    //     Math.abs(mouseX - originX) < scale &&
+    //     Math.abs(mouseY - originY) < scale
+    // ) {
+    isDragging = true;
+    dragStartX = mouseX - originX;
+    dragStartY = mouseY - originY;
+    // }
 });
 canvas.addEventListener('mousemove', (e) => {
     if (isDragging) {
         const mouseX = e.offsetX;
         const mouseY = e.offsetY;
+        console.log('!!! mousemove & isDragging', { mouseX, mouseY });
         originX = mouseX - dragStartX;
         originY = mouseY - dragStartY;
         // Redraw the canvas
@@ -84,24 +107,107 @@ canvas.addEventListener('mouseup', () => {
 });
 // Zoom functionality
 canvas.addEventListener('wheel', (e) => {
-    const _scale = 1.005;
+    const scaleMultiplier = 1.01;
     if (e.deltaY < 0) {
         // Zoom in (less sensitive)
-        scale *= _scale;
+        scale *= scaleMultiplier;
     }
     else {
         // Zoom out (less sensitive)
-        scale /= _scale;
+        scale /= scaleMultiplier;
     }
+    console.log('!!! ON wheel', { scale });
     // Redraw with the new scale
     redraw();
     e.preventDefault(); // Prevent page scroll
+});
+const pointToCanvasPosition = (x, y) => {
+    return {
+        x: x * scale + originX,
+        y: -y * scale + originY,
+    };
+};
+const drawCircle = (x, y, radius) => {
+    const pointPosition = pointToCanvasPosition(x, y);
+    ctx.beginPath();
+    ctx.arc(pointPosition.x, pointPosition.y, radius * scale * 0.1, 0, 2 * Math.PI);
+    ctx.globalAlpha = 0.99;
+    ctx.fillStyle = 'green';
+    ctx.fill();
+    ctx.globalAlpha = 1;
+};
+// // Animate gravity
+// let xInitial = 2;
+// let yInitial = 2;
+const degToRad = Math.PI / 180;
+const initialPosition = {
+    x: 2.5,
+    y: 2.5,
+};
+const initialAngle = 15; // TODOO this is reversed
+const intialPower = 15;
+const initialVelocity = {
+    x: Math.cos(initialAngle * degToRad) * intialPower,
+    y: Math.sin(initialAngle * degToRad) * intialPower,
+};
+let sperePosX = initialPosition.x;
+let sperePosY = initialPosition.y;
+const spereRadius = 5;
+const KinematicEquation = (acceleration, initialVelocity, initialPosition, deltaTime) => {
+    return (0.5 * acceleration * deltaTime * deltaTime +
+        initialVelocity * deltaTime +
+        initialPosition);
+};
+function drawObjects() {
+    drawCircle(sperePosX, sperePosY, spereRadius);
+}
+let time = 0;
+let startTime = 0;
+let elapsedTime = 0;
+let prevElapsedTime = 0;
+let isRunning = false;
+function updateTimer() {
+    if (isRunning) {
+        const currentTime = performance.now();
+        elapsedTime = (currentTime - startTime) / 1000;
+        const deltaTime = elapsedTime - prevElapsedTime;
+        prevElapsedTime = elapsedTime;
+        // console.log(
+        //     `Elapsed time: ${elapsedTime.toFixed(
+        //         2
+        //     )} seconds; Delta: ${deltaTime}`
+        // ); // Log elapsed time
+        // START HERE:
+        const itHitTheGround = sperePosY - spereRadius * 0.1 <= 0;
+        console.log('!!! itHitTheGround', itHitTheGround);
+        if (!itHitTheGround) {
+            sperePosY = KinematicEquation(-9.8, initialVelocity.x, initialPosition.x, elapsedTime);
+        }
+        sperePosX = KinematicEquation(0, initialVelocity.y, initialPosition.y, elapsedTime);
+        redraw();
+        requestAnimationFrame(updateTimer);
+    }
+}
+if (isRunning) {
+    updateTimer();
+}
+toggleTimerBtn === null || toggleTimerBtn === void 0 ? void 0 : toggleTimerBtn.addEventListener('click', () => {
+    if (isRunning) {
+        isRunning = false;
+    }
+    else {
+        isRunning = true;
+        startTime = performance.now() - elapsedTime * 1000; // Adjust startTime to maintain continuity
+        requestAnimationFrame(updateTimer);
+    }
+    console.log('!!! isRunning', isRunning);
 });
 // Function to redraw everything
 function redraw() {
     ctx.clearRect(0, 0, width, height);
     drawGrid();
     drawAxes();
+    drawObjects();
 }
 // Initial drawing
 redraw();
